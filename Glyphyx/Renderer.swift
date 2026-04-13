@@ -106,8 +106,9 @@ class Renderer: NSObject, MTKViewDelegate {
     }
 
     private func buildPipeline(mtkView: MTKView) {
-        guard let library = device.makeDefaultLibrary() else {
-            fatalError("No default Metal library.")
+        let bundle = Bundle(for: Renderer.self)
+        guard let library = try? device.makeDefaultLibrary(bundle: bundle) else {
+            fatalError("No Metal library in bundle: \(bundle.bundlePath)")
         }
 
         let vd = MTLVertexDescriptor()

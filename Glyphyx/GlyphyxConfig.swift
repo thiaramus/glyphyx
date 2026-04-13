@@ -11,7 +11,7 @@ final class GlyphyxConfig {
 
     init() {
         let bundleID = Bundle(for: GlyphyxConfig.self).bundleIdentifier ?? "com.thiaramus.Glyphyx"
-        defaults = ScreenSaverDefaults.defaults(forModuleWithName: bundleID) ?? .standard
+        defaults = ScreenSaverDefaults(forModuleWithName: bundleID) ?? .standard
         load()
     }
 
@@ -24,7 +24,7 @@ final class GlyphyxConfig {
     var backgroundColor:       NSColor = .black
     var fallSpeedMultiplier:   Float   = 1.0
     var cameraSpeedMultiplier: Float   = 1.0
-    var is3D:                  Bool    = true
+    var is3D:                  Bool    = false
     var characterSet:          String  = defaultCharacterSet
 
     // MARK: - Metal Helpers

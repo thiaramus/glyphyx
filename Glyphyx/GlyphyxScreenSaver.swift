@@ -1,6 +1,7 @@
 import ScreenSaver
 import MetalKit
 
+@objc(GlyphyxScreenSaver)
 class GlyphyxScreenSaver: ScreenSaverView {
 
     private var mtkView: MTKView!
@@ -12,16 +13,30 @@ class GlyphyxScreenSaver: ScreenSaverView {
 
     override init?(frame: NSRect, isPreview: Bool) {
         super.init(frame: frame, isPreview: isPreview)
-        setup()
+        wantsLayer = true
+        animationTimeInterval = 1.0 / 60.0
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
-        setup()
+        wantsLayer = true
+        animationTimeInterval = 1.0 / 60.0
     }
 
-    private func setup() {
-        guard let device = MTLCreateSystemDefaultDevice() else { return }
+    // Defer Metal setup until the view is placed in its screen's window.
+    // This ensures the MTKView's CAMetalLayer gets the correct display
+    // connection on every monitor, including secondary screens.
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        guard window != nil, mtkView == nil else { return }
+        setupMetal()
+    }
+
+    private func setupMetal() {
+        // preferredDevice picks the GPU driving this specific screen,
+        // which matters on multi-GPU Macs.
+        let tempView = MTKView(frame: bounds)
+        guard let device = tempView.preferredDevice ?? MTLCreateSystemDefaultDevice() else { return }
 
         mtkView = MTKView(frame: bounds, device: device)
         mtkView.autoresizingMask = [.width, .height]
@@ -30,6 +45,7 @@ class GlyphyxScreenSaver: ScreenSaverView {
         mtkView.clearColor = config.backgroundClearColor
         mtkView.preferredFramesPerSecond = 60
         mtkView.isPaused = true
+        mtkView.enableSetNeedsDisplay = false
 
         renderer = Renderer(config: config)
         renderer.setup(mtkView: mtkView)
@@ -47,16 +63,17 @@ class GlyphyxScreenSaver: ScreenSaverView {
 
     override func startAnimation() {
         super.startAnimation()
-        mtkView?.isPaused = false
+        // Fallback: set up Metal here if viewDidMoveToWindow wasn't called
+        // by the framework for this screen instance (common on secondary screens).
+        if mtkView == nil { setupMetal() }
     }
 
     override func stopAnimation() {
         super.stopAnimation()
-        mtkView?.isPaused = true
     }
 
     override func animateOneFrame() {
-        // MTKView handles its own render loop via its delegate
+        mtkView?.draw()
     }
 
     override var hasConfigureSheet: Bool { true }
