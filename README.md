@@ -7,6 +7,17 @@ A Metal-powered macOS screensaver that renders cascading characters across float
 - macOS 13.0 or later
 - Xcode with Metal support (to build from source)
 
+## Installing from a Release
+
+Pre-built releases are available on the [Releases](../../releases) page. Because the build is unsigned, macOS will block it on first open. Here's how to get past that:
+
+1. Download the zip file from the latest release, unzip it, and double-click `Glyphyx.saver` to install. Choose to install for your user only or all users when prompted.
+2. Open **System Settings → Screen Saver** and select **Glyphyx**. macOS will show a warning saying it cannot be opened and offer to delete it. **Do not delete it** — click **Cancel**.
+3. Open **System Settings → Privacy & Security** and scroll down until you see a message about Glyphyx being blocked. Click **Open Anyway**.
+4. Go back to **System Settings → Screen Saver**, select Glyphyx again, and confirm by clicking **Open** in the dialog that appears.
+
+Glyphyx is now trusted and will run normally.
+
 ## Building & Installing
 
 ```bash
@@ -95,7 +106,7 @@ White foreground, dark navy background, 2D mode, fall speed 0.5×:
 ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
 ```
 
-Clean and understated — good for a secondary monitor.
+Clean and understated.
 
 ### Dense noise
 High fall speed (3×+), small font (10 pt), full punctuation:

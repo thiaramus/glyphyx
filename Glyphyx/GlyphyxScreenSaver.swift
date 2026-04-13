@@ -15,17 +15,18 @@ class GlyphyxScreenSaver: ScreenSaverView {
         super.init(frame: frame, isPreview: isPreview)
         wantsLayer = true
         animationTimeInterval = 1.0 / 60.0
+        setupMetal()
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         wantsLayer = true
         animationTimeInterval = 1.0 / 60.0
+        setupMetal()
     }
 
-    // Defer Metal setup until the view is placed in its screen's window.
-    // This ensures the MTKView's CAMetalLayer gets the correct display
-    // connection on every monitor, including secondary screens.
+    // Secondary-screen fallback: the framework sometimes skips the normal
+    // init path for non-primary displays, so we retry here if needed.
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         guard window != nil, mtkView == nil else { return }
@@ -33,10 +34,7 @@ class GlyphyxScreenSaver: ScreenSaverView {
     }
 
     private func setupMetal() {
-        // preferredDevice picks the GPU driving this specific screen,
-        // which matters on multi-GPU Macs.
-        let tempView = MTKView(frame: bounds)
-        guard let device = tempView.preferredDevice ?? MTLCreateSystemDefaultDevice() else { return }
+        guard let device = MTLCreateSystemDefaultDevice() else { return }
 
         mtkView = MTKView(frame: bounds, device: device)
         mtkView.autoresizingMask = [.width, .height]
