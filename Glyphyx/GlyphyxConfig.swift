@@ -42,6 +42,7 @@ final class GlyphyxConfig {
         "fontSize": 14.0,
         "fallSpeedMultiplier": 1.0,
         "cameraSpeedMultiplier": 1.0,
+        "characterBlur": 0.0,
         "is3D": false,
         "characterSet": defaultCharacterSet,
         "flowDirection": FlowDirection.down.rawValue,
@@ -66,6 +67,7 @@ final class GlyphyxConfig {
     var backgroundColor:       NSColor = .black
     var fallSpeedMultiplier:   Float   = 1.0
     var cameraSpeedMultiplier: Float   = 1.0
+    var characterBlur:         Float   = 0.0
     var is3D:                  Bool    = false
     var characterSet:          String  = defaultCharacterSet
     var flowDirection:         FlowDirection = .down
@@ -127,6 +129,9 @@ final class GlyphyxConfig {
         if defaults.object(forKey: "cameraSpeedMultiplier") != nil {
             cameraSpeedMultiplier = defaults.float(forKey: "cameraSpeedMultiplier")
         }
+        if defaults.object(forKey: "characterBlur") != nil {
+            characterBlur = defaults.float(forKey: "characterBlur")
+        }
         if defaults.object(forKey: "is3D") != nil {
             is3D = defaults.bool(forKey: "is3D")
         }
@@ -151,6 +156,7 @@ final class GlyphyxConfig {
         }
         defaults.set(fallSpeedMultiplier,   forKey: "fallSpeedMultiplier")
         defaults.set(cameraSpeedMultiplier, forKey: "cameraSpeedMultiplier")
+        defaults.set(characterBlur,         forKey: "characterBlur")
         defaults.set(is3D,                  forKey: "is3D")
         defaults.set(characterSet,          forKey: "characterSet")
         defaults.set(flowDirection.rawValue, forKey: "flowDirection")

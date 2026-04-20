@@ -14,6 +14,8 @@ final class ConfigureSheetController: NSWindowController {
     private var backgroundWell:    NSColorWell!
     private var fallSpeedSlider:   NSSlider!
     private var fallSpeedLabel:    NSTextField!
+    private var characterBlurSlider: NSSlider!
+    private var characterBlurLabel: NSTextField!
     private var is3DCheckbox:      NSButton!
     private var flowDirectionPopUp: NSPopUpButton!
     private var bidirectionalLayoutPopUp: NSPopUpButton!
@@ -97,6 +99,10 @@ final class ConfigureSheetController: NSWindowController {
         fallSpeedLabel  = valueLabel(config.fallSpeedMultiplier)
         fallSpeedSlider.target = self; fallSpeedSlider.action = #selector(fallSpeedChanged(_:))
 
+        characterBlurSlider = makeSlider(min: 0.0, max: 3.0, value: config.characterBlur)
+        characterBlurLabel  = blurValueLabel(config.characterBlur)
+        characterBlurSlider.target = self; characterBlurSlider.action = #selector(characterBlurChanged(_:))
+
         // 3D toggle — wired so toggling shows/hides camera speed row
         is3DCheckbox = NSButton(checkboxWithTitle: "Enable 3D mode",
                                 target: self, action: #selector(is3DChanged(_:)))
@@ -126,6 +132,7 @@ final class ConfigureSheetController: NSWindowController {
         // Compound controls
         let fontSizeCtrl  = hStack([fontSizeField, fontSizeStepper],             spacing: 4)
         let fallCtrl      = hStack([fallSpeedSlider, fallSpeedLabel],             spacing: 8)
+        let blurCtrl      = hStack([characterBlurSlider, characterBlurLabel],     spacing: 8)
         let cameraCtrl    = hStack([cameraSpeedSlider, cameraSpeedLabel],         spacing: 8)
 
         // Form rows — each is a horizontal stack: [label (fixed width) | control]
@@ -142,6 +149,7 @@ final class ConfigureSheetController: NSWindowController {
             formRow("Glow Color",       glowWell),
             formRow("Background Color", backgroundWell),
             formRow("Fall Speed",       fallCtrl),
+            formRow("Character Blur",   blurCtrl),
             formRow("Flow Direction",   flowDirectionPopUp),
             bidirectionalLayoutRow,
             formRow("Animation Mode",   is3DCheckbox),
@@ -224,6 +232,13 @@ final class ConfigureSheetController: NSWindowController {
         return l
     }
 
+    private func blurValueLabel(_ value: Float) -> NSTextField {
+        let l = NSTextField(labelWithString: String(format: "%.2f", value))
+        l.translatesAutoresizingMaskIntoConstraints = false
+        l.widthAnchor.constraint(equalToConstant: 52).isActive = true
+        return l
+    }
+
     private func hStack(_ views: [NSView], spacing: CGFloat) -> NSStackView {
         let s = NSStackView(views: views)
         s.orientation = .horizontal
@@ -264,6 +279,10 @@ final class ConfigureSheetController: NSWindowController {
         fallSpeedLabel.stringValue = String(format: "%.2f×", sender.floatValue)
     }
 
+    @objc private func characterBlurChanged(_ sender: NSSlider) {
+        characterBlurLabel.stringValue = String(format: "%.2f", sender.floatValue)
+    }
+
     @objc private func cameraSpeedChanged(_ sender: NSSlider) {
         cameraSpeedLabel.stringValue = String(format: "%.2f×", sender.floatValue)
     }
@@ -288,6 +307,8 @@ final class ConfigureSheetController: NSWindowController {
         backgroundWell.color      = .black
         fallSpeedSlider.floatValue   = 1.0
         fallSpeedLabel.stringValue   = "1.00×"
+        characterBlurSlider.floatValue = 0.0
+        characterBlurLabel.stringValue = "0.00"
         flowDirectionPopUp.selectItem(at: FlowDirection.down.rawValue)
         bidirectionalLayoutPopUp.selectItem(at: BidirectionalLayout.screenHalves.rawValue)
         cameraSpeedSlider.floatValue = 1.0
@@ -322,6 +343,7 @@ final class ConfigureSheetController: NSWindowController {
         config.glowColor             = glowWell.color
         config.backgroundColor       = backgroundWell.color
         config.fallSpeedMultiplier   = fallSpeedSlider.floatValue
+        config.characterBlur         = characterBlurSlider.floatValue
         config.flowDirection         = FlowDirection(rawValue: flowDirectionPopUp.indexOfSelectedItem) ?? .down
         config.bidirectionalLayout   = BidirectionalLayout(rawValue: bidirectionalLayoutPopUp.indexOfSelectedItem) ?? .screenHalves
         config.cameraSpeedMultiplier = cameraSpeedSlider.floatValue

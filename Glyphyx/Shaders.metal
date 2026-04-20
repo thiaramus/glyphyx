@@ -20,6 +20,7 @@ struct FrameUniforms {
     int    totalChars;
     float2 atlasGridSize;
     float  fallSpeedMultiplier;
+    float  characterBlur;
     int    flowDirection;
     int    bidirectionalLayout;
 };
@@ -110,11 +111,31 @@ fragment float4 fragment_main(VertexOut in [[stage_in]],
     int    atlasCol  = charIdx % int(frame.atlasGridSize.x);
     int    atlasRow  = charIdx / int(frame.atlasGridSize.x);
     float2 cellUV    = fract(cellPos);
-    float2 atlasUV   = (float2(float(atlasCol), float(atlasRow)) + cellUV) / frame.atlasGridSize;
-    float4 glyph     = atlas.sample(s, atlasUV);
-    float  alpha     = glyph.r;
+    float2 atlasCellMin = float2(float(atlasCol), float(atlasRow)) / frame.atlasGridSize;
+    float2 atlasCellMax = float2(float(atlasCol + 1), float(atlasRow + 1)) / frame.atlasGridSize;
+    float2 atlasUV      = (float2(float(atlasCol), float(atlasRow)) + cellUV) / frame.atlasGridSize;
+    float2 texelSize    = 1.0 / float2(float(atlas.get_width()), float(atlas.get_height()));
+    float2 clampedMin   = atlasCellMin + texelSize * 0.5;
+    float2 clampedMax   = atlasCellMax - texelSize * 0.5;
 
-    if (alpha < 0.05) {
+    float baseAlpha = atlas.sample(s, atlasUV).r;
+    float haloAlpha = 0.0;
+    if (frame.characterBlur <= 0.001) {
+        haloAlpha = 0.0;
+    } else {
+        float2 blurOffset = texelSize * frame.characterBlur;
+        float blurredAlpha =
+            atlas.sample(s, clamp(atlasUV, clampedMin, clampedMax)).r * 0.227027f +
+            atlas.sample(s, clamp(atlasUV + float2( blurOffset.x, 0.0), clampedMin, clampedMax)).r * 0.1945946f +
+            atlas.sample(s, clamp(atlasUV + float2(-blurOffset.x, 0.0), clampedMin, clampedMax)).r * 0.1945946f +
+            atlas.sample(s, clamp(atlasUV + float2(0.0,  blurOffset.y), clampedMin, clampedMax)).r * 0.1216216f +
+            atlas.sample(s, clamp(atlasUV + float2(0.0, -blurOffset.y), clampedMin, clampedMax)).r * 0.1216216f +
+            atlas.sample(s, clamp(atlasUV + blurOffset, clampedMin, clampedMax)).r * 0.07027f +
+            atlas.sample(s, clamp(atlasUV - blurOffset, clampedMin, clampedMax)).r * 0.07027f;
+        haloAlpha = max(0.0, blurredAlpha - baseAlpha) * min(frame.characterBlur, 1.5);
+    }
+
+    if (baseAlpha < 0.05 && haloAlpha < 0.01) {
         discard_fragment();
     }
 
@@ -134,5 +155,10 @@ fragment float4 fragment_main(VertexOut in [[stage_in]],
         color = color + frame.glowColor.rgb * glowWeight;
     }
 
-    return float4(color * brightness * fogFactor * pane.brightness * alpha, 1.0);
+    float3 glowColor = color * 0.35 + frame.glowColor.rgb * 0.65;
+    float3 finalColor =
+        color * baseAlpha +
+        glowColor * haloAlpha * (0.8 + frame.glowColor.a * 0.6);
+
+    return float4(finalColor * brightness * fogFactor * pane.brightness, 1.0);
 }
