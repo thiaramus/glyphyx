@@ -15,11 +15,14 @@ final class ConfigureSheetController: NSWindowController {
     private var fallSpeedSlider:   NSSlider!
     private var fallSpeedLabel:    NSTextField!
     private var is3DCheckbox:      NSButton!
+    private var flowDirectionPopUp: NSPopUpButton!
+    private var bidirectionalLayoutPopUp: NSPopUpButton!
     private var cameraSpeedSlider: NSSlider!
     private var cameraSpeedLabel:  NSTextField!
     private var characterSetField: NSTextField!
 
     private var cameraSpeedRow: NSView!
+    private var bidirectionalLayoutRow: NSView!
     private var outerStack:     NSStackView!
 
     private let labelWidth: CGFloat = 130
@@ -99,6 +102,16 @@ final class ConfigureSheetController: NSWindowController {
                                 target: self, action: #selector(is3DChanged(_:)))
         is3DCheckbox.state = config.is3D ? .on : .off
 
+        flowDirectionPopUp = NSPopUpButton()
+        FlowDirection.allCases.forEach { flowDirectionPopUp.addItem(withTitle: $0.title) }
+        flowDirectionPopUp.selectItem(at: config.flowDirection.rawValue)
+        flowDirectionPopUp.target = self
+        flowDirectionPopUp.action = #selector(flowDirectionChanged(_:))
+
+        bidirectionalLayoutPopUp = NSPopUpButton()
+        BidirectionalLayout.allCases.forEach { bidirectionalLayoutPopUp.addItem(withTitle: $0.title) }
+        bidirectionalLayoutPopUp.selectItem(at: config.bidirectionalLayout.rawValue)
+
         // Camera speed
         cameraSpeedSlider = makeSlider(min: 0.0, max: 3.0, value: config.cameraSpeedMultiplier)
         cameraSpeedLabel  = valueLabel(config.cameraSpeedMultiplier)
@@ -117,6 +130,8 @@ final class ConfigureSheetController: NSWindowController {
 
         // Form rows — each is a horizontal stack: [label (fixed width) | control]
         // Camera speed row is tracked so it can be hidden
+        bidirectionalLayoutRow = formRow("Split Pattern", bidirectionalLayoutPopUp)
+        bidirectionalLayoutRow.isHidden = config.flowDirection != .bothDirections
         cameraSpeedRow         = formRow("Camera Speed", cameraCtrl)
         cameraSpeedRow.isHidden = !config.is3D
 
@@ -127,6 +142,8 @@ final class ConfigureSheetController: NSWindowController {
             formRow("Glow Color",       glowWell),
             formRow("Background Color", backgroundWell),
             formRow("Fall Speed",       fallCtrl),
+            formRow("Flow Direction",   flowDirectionPopUp),
+            bidirectionalLayoutRow,
             formRow("Animation Mode",   is3DCheckbox),
             cameraSpeedRow,
             formRow("Character Set",    characterSetField),
@@ -256,6 +273,12 @@ final class ConfigureSheetController: NSWindowController {
         fitWindow(animated: true)
     }
 
+    @objc private func flowDirectionChanged(_ sender: NSPopUpButton) {
+        let selectedDirection = FlowDirection(rawValue: sender.indexOfSelectedItem) ?? .down
+        bidirectionalLayoutRow.isHidden = selectedDirection != .bothDirections
+        fitWindow(animated: true)
+    }
+
     @objc private func resetToDefaults(_ sender: Any) {
         fontPopUp.selectItem(withTitle: NSFont(name: "Menlo-Bold", size: 12)?.familyName ?? "Menlo")
         fontSizeStepper.intValue  = 14
@@ -265,10 +288,13 @@ final class ConfigureSheetController: NSWindowController {
         backgroundWell.color      = .black
         fallSpeedSlider.floatValue   = 1.0
         fallSpeedLabel.stringValue   = "1.00×"
+        flowDirectionPopUp.selectItem(at: FlowDirection.down.rawValue)
+        bidirectionalLayoutPopUp.selectItem(at: BidirectionalLayout.screenHalves.rawValue)
         cameraSpeedSlider.floatValue = 1.0
         cameraSpeedLabel.stringValue = "1.00×"
         is3DCheckbox.state            = .off
         characterSetField.stringValue = GlyphyxConfig.defaultCharacterSet
+        bidirectionalLayoutRow.isHidden = true
         cameraSpeedRow.isHidden = true
         fitWindow(animated: true)
     }
@@ -296,6 +322,8 @@ final class ConfigureSheetController: NSWindowController {
         config.glowColor             = glowWell.color
         config.backgroundColor       = backgroundWell.color
         config.fallSpeedMultiplier   = fallSpeedSlider.floatValue
+        config.flowDirection         = FlowDirection(rawValue: flowDirectionPopUp.indexOfSelectedItem) ?? .down
+        config.bidirectionalLayout   = BidirectionalLayout(rawValue: bidirectionalLayoutPopUp.indexOfSelectedItem) ?? .screenHalves
         config.cameraSpeedMultiplier = cameraSpeedSlider.floatValue
         config.is3D                  = is3DCheckbox.state == .on
         let chars = characterSetField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)

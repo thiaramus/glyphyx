@@ -20,9 +20,8 @@ struct FrameUniforms {
     int    totalChars;
     float2 atlasGridSize;
     float  fallSpeedMultiplier;
-    float  _pad0;
-    float  _pad1;
-    float  _pad2;
+    int    flowDirection;
+    int    bidirectionalLayout;
 };
 
 struct PaneUniforms {
@@ -54,6 +53,7 @@ fragment float4 fragment_main(VertexOut in [[stage_in]],
     float2 cellPos   = in.uv * pane.gridSize;
     int    col       = int(cellPos.x);
     int    row       = int(cellPos.y);
+    int    totalCols = int(pane.gridSize.x);
     int    totalRows = int(pane.gridSize.y);
 
     // Per-column seed combining column index and pane identity
@@ -65,13 +65,27 @@ fragment float4 fragment_main(VertexOut in [[stage_in]],
     float offset      = hash(float2(colSeed, 1.0)) * float(totalRows);
     int   trailLength = 10 + int(hash(float2(colSeed, 2.0)) * 20.0);
 
-    // Falling head position
+    int direction = 1;
+    if (frame.flowDirection == 1) {
+        direction = -1;
+    } else if (frame.flowDirection == 2) {
+        if (frame.bidirectionalLayout == 1) {
+            direction = (col % 2 == 0) ? 1 : -1;
+        } else {
+            int splitColumn = totalCols / 2;
+            direction = col < splitColumn ? 1 : -1;
+        }
+    }
+
+    // Head position
     float cycleLen = float(totalRows + trailLength + 10);
     float headF    = fmod(frame.time * speed + offset * cycleLen, cycleLen);
     int   head     = int(headF);
 
+    int orientedRow = direction > 0 ? row : (totalRows - 1 - row);
+
     // Only render cells within the trail behind the head
-    int dist = head - row;
+    int dist = head - orientedRow;
     if (dist < 0 || dist > trailLength) {
         discard_fragment();
     }

@@ -3,15 +3,57 @@ import AppKit
 import Metal
 import ScreenSaver
 
+enum FlowDirection: Int, CaseIterable {
+    case down = 0
+    case up = 1
+    case bothDirections = 2
+
+    var title: String {
+        switch self {
+        case .down:
+            return "Down"
+        case .up:
+            return "Up"
+        case .bothDirections:
+            return "Both Directions"
+        }
+    }
+}
+
+enum BidirectionalLayout: Int, CaseIterable {
+    case screenHalves = 0
+    case alternatingColumns = 1
+
+    var title: String {
+        switch self {
+        case .screenHalves:
+            return "Screen Halves"
+        case .alternatingColumns:
+            return "Alternating Columns"
+        }
+    }
+}
+
 final class GlyphyxConfig {
 
     static let defaultCharacterSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()[]{}<>?/\\|=+-"
+    private static let registeredDefaults: [String: Any] = [
+        "fontName": "Menlo-Bold",
+        "fontSize": 14.0,
+        "fallSpeedMultiplier": 1.0,
+        "cameraSpeedMultiplier": 1.0,
+        "is3D": false,
+        "characterSet": defaultCharacterSet,
+        "flowDirection": FlowDirection.down.rawValue,
+        "bidirectionalLayout": BidirectionalLayout.screenHalves.rawValue,
+    ]
 
     private let defaults: UserDefaults
 
     init() {
         let bundleID = Bundle(for: GlyphyxConfig.self).bundleIdentifier ?? "com.thiaramus.Glyphyx"
         defaults = ScreenSaverDefaults(forModuleWithName: bundleID) ?? .standard
+        defaults.register(defaults: Self.registeredDefaults)
         load()
     }
 
@@ -26,6 +68,8 @@ final class GlyphyxConfig {
     var cameraSpeedMultiplier: Float   = 1.0
     var is3D:                  Bool    = false
     var characterSet:          String  = defaultCharacterSet
+    var flowDirection:         FlowDirection = .down
+    var bidirectionalLayout:   BidirectionalLayout = .screenHalves
 
     // MARK: - Metal Helpers
 
@@ -87,6 +131,10 @@ final class GlyphyxConfig {
             is3D = defaults.bool(forKey: "is3D")
         }
         if let v = defaults.string(forKey: "characterSet"), !v.isEmpty { characterSet = v }
+        let flowDirectionRawValue = defaults.integer(forKey: "flowDirection")
+        flowDirection = FlowDirection(rawValue: flowDirectionRawValue) ?? .down
+        let bidirectionalLayoutRawValue = defaults.integer(forKey: "bidirectionalLayout")
+        bidirectionalLayout = BidirectionalLayout(rawValue: bidirectionalLayoutRawValue) ?? .screenHalves
     }
 
     func save() {
@@ -105,6 +153,8 @@ final class GlyphyxConfig {
         defaults.set(cameraSpeedMultiplier, forKey: "cameraSpeedMultiplier")
         defaults.set(is3D,                  forKey: "is3D")
         defaults.set(characterSet,          forKey: "characterSet")
+        defaults.set(flowDirection.rawValue, forKey: "flowDirection")
+        defaults.set(bidirectionalLayout.rawValue, forKey: "bidirectionalLayout")
         defaults.synchronize()
     }
 }

@@ -15,9 +15,8 @@ struct FrameUniforms {
     var totalChars:          Int32
     var atlasGridSize:       SIMD2<Float>
     var fallSpeedMultiplier: Float
-    var _pad0:               Float = 0
-    var _pad1:               Float = 0
-    var _pad2:               Float = 0
+    var flowDirection:       Int32
+    var bidirectionalLayout: Int32
 }
 
 struct PaneUniforms {
@@ -253,7 +252,9 @@ class Renderer: NSObject, MTKViewDelegate {
             time:                elapsed,
             totalChars:          Int32(characters.count),
             atlasGridSize:       SIMD2(Float(atlasCols), Float(atlasRows)),
-            fallSpeedMultiplier: config.fallSpeedMultiplier
+            fallSpeedMultiplier: config.fallSpeedMultiplier,
+            flowDirection:       Int32(config.flowDirection.rawValue),
+            bidirectionalLayout: Int32(config.bidirectionalLayout.rawValue)
         )
 
         guard
