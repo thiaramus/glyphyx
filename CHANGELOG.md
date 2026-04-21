@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.1.2]
+- Implemented per-character blur
+- Added bi-directional character flow
+
 ## [0.1.1]
 - Fixed screensaver not rendering on the built-in display
 
